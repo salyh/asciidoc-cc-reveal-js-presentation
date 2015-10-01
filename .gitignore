@@ -1,0 +1,8 @@
+**/.DS_Store
+.asciidoctor-reveal.js/
+.deck2pdf/
+.reveal.js/
+target/
+slides_*.tar.gz
+.decktape
+
