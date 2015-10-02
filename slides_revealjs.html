@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="author" content="Hendrik Saly, codecentric AG" /><meta name="copyright" content="by-sa" /><title>Johnzon - Apache&#8217;s&#160;Upcoming JSON Library</title><meta content="yes" name="apple-mobile-web-app-capable" /><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" name="viewport" /><link href="reveal.js/css/reveal.css" rel="stylesheet" /><link rel="stylesheet" href="reveal.js/css/theme/cc_black.css" id="theme" /><link href="reveal.js/plugin/highlight/styles/sunburst.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script></head><body><div class="reveal"><div class="slides"><section data-background-image="images/cc/codecentric-title-background-16x9.png"><h1><strong>Johnzon</strong> - Apache&#8217;s&#160;Upcoming JSON Library</h1><p><small>Hendrik Saly, codecentric AG</small></p></section><section id="about-the-apache-incubator"><h2>About the Apache Incubator</h2><div class="paragraph"><p>"The Incubator project is the entry path into The Apache Software Foundation (ASF) for projects and codebases
+wishing to become part of the Foundation&#8217;s efforts." (<a href="http://incubator.apache.org/" class="bare">http://incubator.apache.org/</a>)</p></div>
+<div class="paragraph"><p>The Apache Incubator has two primary goals:</p></div>
+<div class="ulist"><ul><li><p>Ensure all donations are in accordance with the ASF legal standards</p></li><li><p>Develop new communities that adhere to our guiding principles</p></li></ul></div></section>
+<section id="what-is-johnzon"><h2>What is Johnzon?</h2><div class="ulist"><ul><li><p>Lightweight JSON library written in Java</p></li><li><p>Core &lt; 90k, 200k for the whole library</p></li><li><p>No external dependencies</p></li><li><p>Implementation of JSR-353</p></li><li><p>Apache 2 License</p></li></ul></div>
+<div class="imageblock" style="text-align: right"><div class="content"><img src="images/johnzon_logo.png" alt="johnzon logo" width="250" /></div></div>
+<aside class="notes"><div class="paragraph"><p>JEE, Java SE</p></div></aside></section>
+<section id="what-is-johnzon-cont"><h2>What is Johnzon? (cont.)</h2><div class="ulist"><ul><li><p>Contains also modules which are not defined in JSR-353</p><div class="ulist"><ul><li><p>Object mapper</p></li><li><p>JAX-RS provider</p></li><li><p>Websocket (JSR-356) integration (beta)</p></li><li><p>JSON DSL for mutating documents comfortably (beta)</p></li></ul></div></li></ul></div></section>
+<section id="status-of-the-project"><h2>Status of the project</h2><div class="ulist"><ul><li><p>Small but engaged, responsive and friendly community</p></li><li><p>Stable and production ready</p></li><li><p>Performance for Johnzon core is quite well</p></li><li><p>Currently incubating within the Apache Incubator</p><div class="ulist"><ul><li><p>and looking for new community members</p></li><li><p>low entrance barrier</p></li></ul></div></li><li><p>Plan is to graduate soon (start this year)</p></li></ul></div></section>
+<section id="roadmap"><h2>Roadmap</h2><div class="ulist"><ul><li><p>Implement JSR-367 (API for JSON Binding/JSON-B)</p></li><li><p>Implement JSR-374 (Update of JSR-353)</p></li><li><p>Performance enhancements</p></li><li><p>Increase test coverage</p></li><li><p>JEE certification (once TCK available)</p></li></ul></div></section>
+<section id="current-users-of-johnzon"><h2>Current users of Johnzon</h2><div class="ulist"><ul><li><p>Apache TomEE 2</p></li><li><p>Apache Tamaya</p></li><li><p>Apache Decanter</p></li></ul></div></section>
+<section id="jsr" data-background="images/cc/codecentric-green-background-16x9.png"><h2>JSR</h2><div class="paragraph"><p>The spec part</p></div></section>
+<section id="what-is-a-jsr"><h2>What is a JSR</h2><div class="ulist"><ul><li><p>JSR &#8594; Java Specification Request</p></li><li><p>A formal standardization process</p></li><li><p>Community involved</p></li><li><p>Controlled by Oracle within the Java community process (JCP)</p></li></ul></div></section>
+<section id="jsr-353-basics"><h2>JSR-353 Basics</h2><div class="ulist"><ul><li><p>Can be used standalone or within a JEE container</p></li><li><p>Provides a streaming API as well as a "Tree Model" API for parsing</p></li><li><p>Generator API for generating valid JSON streams</p></li></ul></div></section>
+<section id="streaming-api"><h2>Streaming API</h2><div class="ulist"><ul><li><p>Pull parser, parse JSON files of any size</p></li><li><p>Encoding autodetection</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">JsonParser parser = Json.createParser(new FileReader("file.json"));
+while(parser.hasNext() {
+    Event event = parser.next();
+    if(event == Event.VALUE_STRING) {
+    	System.out.println(parser.getString());
+    }
+}</code></pre></div></div></section>
+<section id="encoding-autodetection"><h2>Encoding autodetection</h2><div class="ulist"><ul><li><p>RFC 4627 Chapter 3</p></li><li><p>"JSON text SHALL be encoded in Unicode"</p></li><li><p>First two character are always ASCII</p></li><li><p>So we can use this matrix to detect encoding:</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code>00 00 00 xx  UTF-32BE
+00 xx 00 xx  UTF-16BE
+xx 00 00 00  UTF-32LE
+xx 00 xx 00  UTF-16LE
+xx xx xx xx  UTF-8</code></pre></div></div>
+<div class="paragraph"><p>(Johnzon does also handle octet-streams with BOM&#8217;s correctly)</p></div></section>
+<section id="tree-model-api"><h2>"Tree Model" API</h2><div class="ulist"><ul><li><p>Parse JSON to immutable object tree</p></li><li><p>Caution: All in-memory</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">JsonReader reader = Json.createReader(new StringReader("[]"));
+JsonArray array = reader.readArray();
+System.out.println(array.isEmpty());
+System.out.println(array.get(0));
+jsonReader.close();</code></pre></div></div></section>
+<section id="generator-api"><h2>Generator API</h2><div class="ulist"><ul><li><p>Write JSON "value by value" into a byte/char stream</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">Writer writer = ...;
+JsonGenerator generator = Json.createGenerator(writer);
+generator
+     .writeStartObject()
+         .write("firstName", "Mister")
+         .write("lastName", "Spock")
+         .write("age", 99)
+         .writeStartObject("address")
+             .write("streetAddress", "Kolinahr Street 1")
+             .write("city", "Vulcan City")
+             .write("state", "VU")
+             .write("postalCode", "1701")
+         .writeEnd()
+     .writeEnd();
+generator.close();</code></pre></div></div></section>
+<section id="writer-api"><h2>Writer API</h2><div class="ulist"><ul><li><p>Write the "Tree Model" back into a byte/char stream</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">Outputstream out = ...;
+JsonObject jo = ...;
+JsonWriter jsonWriter = Json.createWriter(out);
+jsonWriter.writeObject(jo);
+jsonWriter.close();</code></pre></div></div></section>
+<section id="configuration"><h2>Configuration</h2><div class="ulist"><ul><li><p>Key-Value based</p></li><li><p>Implementation dependent</p></li><li><p>Via factories</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">final JsonReader reader = Json.createReaderFactory(new HashMap&lt;String, Object&gt;() {
+            put("org.apache.johnzon.supports-comments", true);
+        }).createReader(...);
+JsonParser generator = Json.createGeneratorFactory();
+JsonGenerator generator = Json.createGeneratorFactory();</code></pre></div></div></section>
+<section id="johnzon" data-background="images/cc/codecentric-green-background-16x9.png"><h2>Johnzon</h2><div class="paragraph"><p>in particular</p></div></section>
+<section id="johnzon-strong-non-strong-jsr-353-features"><h2>Johnzon <strong>non</strong> JSR-353 Features</h2><div class="ulist"><ul><li><p>Comments (single line/multiline)</p></li><li><p>Configurable buffer sizes</p></li><li><p>Different buffer reuse strategies</p><div class="ulist"><ul><li><p>QUEUE - char[] are reused by ConcurrentLinkedQueue (default)</p></li><li><p>BY_INSTANCE - char[] are not reused</p></li><li><p>SINGLETON - char[] are reused by only one global char[]</p></li><li><p>THREAD_LOCAL - char[] are reused by thread (every thread does have its char[] buffer bound to a thread local)</p></li></ul></div></li></ul></div></section>
+<section id="the-mapper"><h2>The "Mapper"</h2><div class="ulist"><ul><li><p>JSON&#8592;&#8594;Java Binding</p></li><li><p>Used by JAX RS provider/Websocket module</p></li><li><p>Supports</p><div class="ulist"><ul><li><p>Custom de-/serializers</p></li><li><p>Proper handling of collections and generics</p></li><li><p>@JohnzonConverter and @JohnzonIgnore annotations</p></li><li><p>Works with fields, getter/setter or both</p></li><li><p>Configurable null/empty handling</p></li><li><p>Configurable byte[] handling</p></li></ul></div></li></ul></div></section>
+<section id="the-mapper-cont"><h2>The "Mapper" (cont.)</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">final static Mapper mapper = new MapperBuilder().build();
+MyObject myObj = ...;
+mapper.writeObject(myObj, outputStream);
+MyObject myObj2 = mapper.readObject(inputStream, MyObject.class);</code></pre></div></div>
+<div class="paragraph"><p>(Yet some missing default datatypes for Java SE 8 like java.time.*)</p></div></section>
+<section id="the-mapper-cont-2"><h2>The "Mapper" (cont.)</h2><div class="ulist"><ul><li><p>Works mostly hassle free</p></li><li><p>Will be aligned with JSON-B Spec (JSR-367)</p></li><li><p>Need some performance tuning</p></li></ul></div></section>
+<section id="jax-rs-provider"><h2>JAX-RS Provider</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="xml language-xml">&lt;Service id="johnzon"
+         class-name="org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider"&gt;
+    ignores = com.foo.MyType,com.foo.MyOtherType
+    accessMode = method
+    supportHiddenAccess = true
+    doCloseOnStreams = false
+    version = 2
+    skipNull = true
+    skipEmptyArray = true
+&lt;/Service&gt;</code></pre></div></div></section>
+<section id="websockets"><h2>Websockets</h2><div class="ulist"><ul><li><p>Since Johnzon 0.8 there is a Websocket/JSR-356 integration</p></li><li><p>JSON as payload format for WebSocket messages</p></li><li><p><a href="https://rmannibucau.wordpress.com/2015/03/24/json-and-websocket-johnzon-to-the-rescue/" class="bare">https://rmannibucau.wordpress.com/2015/03/24/json-and-websocket-johnzon-to-the-rescue/</a></p></li></ul></div></section>
+<section id="websockets-cont"><h2>Websockets (cont.)</h2><div class="paragraph"><p>Server</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">@ServerEndpoint(value = "/server", encoders = JohnzonTextEncoder.class,
+                                   decoders = JohnzonTextDecoder.class)
+public class MyServerEndpoint {
+    // same as before
+}</code></pre></div></div>
+<div class="paragraph"><p>Client</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">public class MessageDecoder extends JohnzonTextDecoder {
+    public MessageDecoder() {
+        super(Message.class);
+    }
+}
+// and used like:
+@ClientEndpoint(encoders = JohnzonTextEncoder.class, decoders = MessageDecoder.class)
+public class ClientEndpointImpl {
+    // ...
+}</code></pre></div></div></section>
+<section id="johnzon-dsl"><h2>Johnzon DSL</h2><div class="ulist"><ul><li><p>Upcoming with Johnzon 2</p></li><li><p>Mutable and navigable JSON Structure</p></li><li><p>Fluent API</p></li></ul></div></section>
+<section id="johnzon-dsl-cont"><h2>Johnzon DSL (cont.)</h2><div class="ulist"><ul><li><p>Looks like:</p></li></ul></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">JsonObject jo = ...;
+MutableJsonStructure ms = MutableJsonStructureFactory.toMutableJsonStructure(jo);
+assertNotSame(ms, ms.copy());
+assertFalse(ms.isLeaf("address"));
+assertFalse(ms.isLeafNull("firstName"));
+assertTrue(ms.exists("phoneNumber"));
+assertEquals(1, ms.get("phoneNumber").get(1).getAncestor().getIndex());
+assertNull(ms.getParent());
+assertEquals("Smith", ms.getLeafAsString("lastName"));
+assertEquals("NY", ms.get("address").getLeafAsString("state"));
+assertEquals(5, ms.getKeys().size());
+assertEquals(5, ms.size());
+assertEquals(4, ms.get("address").size());
+ms.add("additionalAddress", ms.get("address").copy().remove("city").set("state", "CA"));
+ms.set(ms.copy().remove("phoneNumber"));
+assertEquals(5, ms.size());
+JsonObject modJo = (JsonObject) ms.toJsonStructure();</code></pre></div></div></section>
+<section id="benchmark"><h2>Benchmark</h2><div class="ulist"><ul><li><p>JMH based benchmark suite</p></li><li><p>Bytes, Chars (UTF-8/UTF-16)</p></li><li><p>Measurements</p><div class="ulist"><ul><li><p>Parse Only</p></li><li><p>Read to "Tree Model"</p></li><li><p>Generate JSON</p></li><li><p>Serialize</p></li><li><p>Deserialize</p></li></ul></div></li></ul></div>
+<aside class="notes"><div class="paragraph"><p>Not included within Apache Scope because of JMH licensing issue</p></div></aside></section>
+<section id="benchmark-cont"><h2>Benchmark (cont.)</h2><div class="ulist"><ul><li><p>Small size JSON</p></li></ul></div>
+<div class="imageblock" style=""><div class="content"><img src="images/parseOnly1kChars.jpg" alt="parseOnly1kChars" /></div></div></section>
+<section id="benchmark-cont-2"><h2>Benchmark (cont.)</h2><div class="ulist"><ul><li><p>Medium size JSON (byte stream)</p></li></ul></div>
+<div class="imageblock" style=""><div class="content"><img src="images/read1000kBytes.jpg" alt="read1000kBytes" /></div></div></section>
+<section id="benchmark-cont-3"><h2>Benchmark (cont.)</h2><div class="ulist"><ul><li><p>Medium size JSON (character stream)</p></li></ul></div>
+<div class="imageblock" style=""><div class="content"><img src="images/read1000kChars.jpg" alt="read1000kChars" /></div></div></section>
+<section id="benchmark-cont-4"><h2>Benchmark (cont.)</h2><div class="ulist"><ul><li><p>Serialize simple Java Object</p></li></ul></div>
+<div class="imageblock" style=""><div class="content"><img src="images/serializeSimpleBytes.jpg" alt="serializeSimpleBytes" /></div></div></section>
+<section id="testcoverage"><h2>Testcoverage</h2><div class="ulist"><ul><li><p>Approx. 74%  testcoverage yet</p></li><li><p>We want to get above 90%</p></li><li><p><a href="https://coveralls.io/github/salyh/incubator-johnzon" class="bare">https://coveralls.io/github/salyh/incubator-johnzon</a></p></li></ul></div></section>
+<section id="upcoming" data-background="images/cc/codecentric-green-background-16x9.png"><h2>Upcoming</h2><div class="paragraph"><p>The new JSON JSR Specs</p></div></section>
+<section id="jsr-374-json-p-1-1"><h2>JSR-374 (JSON-P 1.1)</h2><div class="ulist"><ul><li><p>RFC 7159 (update of RFC 4627)</p></li><li><p>Java SE 8</p></li><li><p>Json Pointer (RFC 6901)</p></li><li><p>Json Patch (RFC 6902)</p></li><li><p>Json Merge Patch (RFC 7396)</p></li><li><p>Mutable "Tree Model"</p></li><li><p>Currently EDR (Early draft review)</p></li></ul></div></section>
+<section id="jsr-367-json-b-1-0"><h2>JSR-367 (JSON-B 1.0)</h2><div class="ulist"><ul><li><p>Java standard for JSON&lt;&#8594;Java Binding</p></li><li><p>Java SE 8</p></li><li><p>Integrates with JSR-353/374</p></li><li><p>Currently EDR (Early draft review)</p></li></ul></div></section>
+<section id="jsr-367-json-b-1-0-cont"><h2>JSR-367 (JSON-B 1.0) (cont.)</h2><div class="listingblock"><div class="content"><pre class="highlight"><code class="java language-java">Jsonb jsonb = JsonbBuilder.create();
+Book book = jsonb.fromJson(new File("jsonfile.json"), Book.class);</code></pre></div></div></section>
+<section id="getting-started" data-background="images/cc/codecentric-green-background-16x9.png"><h2>Getting started</h2><div class="paragraph"><p>and involved</p></div></section>
+<section id="get-it"><h2>Get it</h2><div class="paragraph"><p>from maven central</p></div>
+<div class="listingblock"><div class="content"><pre class="highlight"><code class="xml language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.johnzon&lt;/groupId&gt;
+  &lt;artifactId&gt;johnzon-core&lt;/artifactId&gt;
+  &lt;version&gt;0.9.1-incubating&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;
+  &lt;artifactId&gt;geronimo-json_1.0_spec&lt;/artifactId&gt;
+  &lt;version&gt;1.0-alpha-1&lt;/version&gt;
+  &lt;scope&gt;provided&lt;/scope&gt; &lt;!-- or compile if your environment doesn't provide it --&gt;
+&lt;/dependency&gt;</code></pre></div></div>
+<div class="paragraph"><p>or download from <a href="http://www.eu.apache.org/dist/incubator/johnzon/" class="bare">http://www.eu.apache.org/dist/incubator/johnzon/</a></p></div></section>
+<section id="where-to-go-from-here"><h2>Where to go from here</h2><div class="ulist"><ul><li><p><a href="http://incubator.apache.org/projects/johnzon.html" class="bare">http://incubator.apache.org/projects/johnzon.html</a></p></li><li><p><a href="mailto:dev-subscribe@johnzon.incubator.apache.org">Subscribe to the dev mailing list</a></p></li><li><p><a href="https://github.com/salyh/jsr353-benchmark" class="bare">https://github.com/salyh/jsr353-benchmark</a></p></li><li><p><a href="https://github.com/apache/incubator-johnzon/tree/jsr374_367" class="bare">https://github.com/apache/incubator-johnzon/tree/jsr374_367</a></p></li><li><p><a href="https://www.jcp.org/en/jsr/detail?id=353" class="bare">https://www.jcp.org/en/jsr/detail?id=353</a></p></li><li><p><a href="https://www.jcp.org/en/jsr/detail?id=374" class="bare">https://www.jcp.org/en/jsr/detail?id=374</a></p></li><li><p><a href="https://www.jcp.org/en/jsr/detail?id=367" class="bare">https://www.jcp.org/en/jsr/detail?id=367</a></p></li></ul></div></section>
+<section id="consider-to-join-the-project-if-you-are"><h2>Consider to join the project if you are</h2><div class="ulist"><ul><li><p>a (Java) developer looking to get involved within ASF</p></li><li><p>interested in implementing standards</p></li><li><p>doing JSON the whole day</p></li><li><p>looking for a great community to engage with</p></li></ul></div></section>
+<section id="github"><h2>Github</h2><div class="ulist"><ul><li><p><a href="https://github.com/apache/incubator-johnzon" class="bare">https://github.com/apache/incubator-johnzon</a></p></li><li><p>We accept Pull Requests</p></li></ul></div></section>
+<section id="thank-you"><h2>Thank you!</h2><div class="ulist"><ul><li><p><a href="mailto:salyh@apache.org">salyh@apache.org</a></p></li><li><p>Follow me on Twitter: <a href="https://twitter.com/hendrikdev22">@hendrikdev22</a></p></li></ul></div>
+<div class="imageblock" style="float: left"><div class="content"><img src="images/license/by-sa/88x31.png" alt="88x31" /></div></div>
+<div class="paragraph license"><p>This work is licensed under a <a href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution 4.0 International License</a></p></div>
+<div class="imageblock" style="text-align: center"><div class="content"><img src="images/cc/logo_cc.png" alt="logo cc" /></div></div></section></div></div><script src="reveal.js/lib/js/head.min.js"></script><script src="reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
+Reveal.initialize({
+  // Display controls in the bottom right corner
+  controls: true,
+  // Display a presentation progress bar
+  progress: true,
+  // Display the page number of the current slide
+  slideNumber: true,
+  // Push each slide change to the browser history
+  history: true,
+  // Enable keyboard shortcuts for navigation
+  keyboard: true,
+  // Enable the slide overview mode
+  overview: true,
+  // Vertical centering of slides
+  center: false,
+  // Enables touch navigation on devices with touch input
+  touch: true,
+  // Loop the presentation
+  loop: false,
+  // Change the presentation direction to be RTL
+  rtl: false,
+  // Turns fragments on and off globally
+  fragments: true,
+  // Flags if the presentation is running in an embedded mode,
+  // i.e. contained within a limited portion of the screen
+  embedded: false,
+  // Number of milliseconds between automatically proceeding to the
+  // next slide, disabled when set to 0, this value can be overwritten
+  // by using a data-autoslide attribute on your slides
+  autoSlide: 0,
+  // Stop auto-sliding after user input
+  autoSlideStoppable: true,
+  // Enable slide navigation via mouse wheel
+  mouseWheel: false,
+  // Hides the address bar on mobile devices
+  hideAddressBar: true,
+  // Opens links in an iframe preview overlay
+  previewLinks: false,
+  // Theme (e.g., beige, black, league, night, serif, simple, sky, solarized, white)
+  // NOTE setting the theme in the config no longer works in reveal.js 3.x
+  //theme: Reveal.getQueryHash().theme || 'cc_black',
+  // Transition style (e.g., none, fade, slide, convex, concave, zoom)
+  transition: Reveal.getQueryHash().transition || 'slide',
+  // Transition speed (e.g., default, fast, slow)
+  transitionSpeed: 'default',
+  // Transition style for full page slide backgrounds (e.g., none, fade, slide, convex, concave, zoom)
+  backgroundTransition: 'fade',
+  // Number of slides away from the current that are visible
+  viewDistance: 3,
+  // Parallax background image (e.g., "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'")
+  parallaxBackgroundImage: '',
+  // Parallax background size in CSS syntax (e.g., "2100px 900px")
+  parallaxBackgroundSize: '',
+
+  // The "normal" size of the presentation, aspect ratio will be preserved
+  // when the presentation is scaled to fit different resolutions. Can be
+  // specified using percentage units.
+  width: 960,
+  height: 700,
+
+  // Factor of the display size that should remain empty around the content
+  margin: 0.1,
+
+  // Bounds for smallest/largest possible scale to apply to content
+  minScale: 0.2,
+  maxScale: 1.5,
+
+  // Optional libraries used to extend on reveal.js
+  dependencies: [
+      { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+      { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+      { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+  ]
+});</script></body></html>
