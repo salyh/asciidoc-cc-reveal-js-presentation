@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="author" content="Hendrik Saly, codecentric AG" /><meta name="copyright" content="by-sa" /><title>Johnzon - Apache&#8217;s&#160;Upcoming JSON Library</title><meta content="yes" name="apple-mobile-web-app-capable" /><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" name="viewport" /><link href="reveal.js/css/reveal.css" rel="stylesheet" /><link rel="stylesheet" href="reveal.js/css/theme/cc_black.css" id="theme" /><link href="reveal.js/plugin/highlight/styles/sunburst.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script></head><body><div class="reveal"><div class="slides"><section data-background-image="images/cc/codecentric-title-background-16x9.png"><h1><strong>Johnzon</strong> - Apache&#8217;s&#160;Upcoming JSON Library</h1><p><small>Hendrik Saly, codecentric AG</small></p></section><section id="about-the-apache-incubator"><h2>About the Apache Incubator</h2><div class="paragraph"><p>"The Incubator project is the entry path into The Apache Software Foundation (ASF) for projects and codebases
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="author" content="Hendrik Saly, codecentric AG" /><meta name="copyright" content="by-sa" /><title>Johnzon - Apache&#8217;s&#160;Upcoming JSON Library</title><meta content="yes" name="apple-mobile-web-app-capable" /><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" name="viewport" /><link href="revealjs/css/reveal.css" rel="stylesheet" /><link rel="stylesheet" href="revealjs/css/theme/cc_black.css" id="theme" /><link href="revealjs/plugin/highlight/styles/sunburst.css" rel="stylesheet" /><script>document.write( '<link rel="stylesheet" href="revealjs/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );</script></head><body><div class="reveal"><div class="slides"><section data-background-image="images/cc/codecentric-title-background-16x9.png"><h1><strong>Johnzon</strong> - Apache&#8217;s&#160;Upcoming JSON Library</h1><p><small>Hendrik Saly, codecentric AG</small></p></section><section id="about-the-apache-incubator"><h2>About the Apache Incubator</h2><div class="paragraph"><p>"The Incubator project is the entry path into The Apache Software Foundation (ASF) for projects and codebases
 wishing to become part of the Foundation&#8217;s efforts." (<a href="http://incubator.apache.org/" class="bare">http://incubator.apache.org/</a>)</p></div>
 <div class="paragraph"><p>The Apache Incubator has two primary goals:</p></div>
 <div class="ulist"><ul><li><p>Ensure all donations are in accordance with the ASF legal standards</p></li><li><p>Develop new communities that adhere to our guiding principles</p></li></ul></div></section>
@@ -154,7 +154,7 @@ Book book = jsonb.fromJson(new File("jsonfile.json"), Book.class);</code></pre><
 <section id="thank-you"><h2>Thank you!</h2><div class="ulist"><ul><li><p><a href="mailto:salyh@apache.org">salyh@apache.org</a></p></li><li><p>Follow me on Twitter: <a href="https://twitter.com/hendrikdev22">@hendrikdev22</a></p></li></ul></div>
 <div class="imageblock" style="float: left"><div class="content"><img src="images/license/by-sa/88x31.png" alt="88x31" /></div></div>
 <div class="paragraph license"><p>This work is licensed under a <a href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution 4.0 International License</a></p></div>
-<div class="imageblock" style="text-align: center"><div class="content"><img src="images/cc/logo_cc.png" alt="logo cc" /></div></div></section></div></div><script src="reveal.js/lib/js/head.min.js"></script><script src="reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
+<div class="imageblock" style="text-align: center"><div class="content"><img src="images/cc/logo_cc.png" alt="logo cc" /></div></div></section></div></div><script src="revealjs/lib/js/head.min.js"></script><script src="revealjs/js/reveal.js"></script><script>// See https://github.com/hakimel/revealjs#configuration for a full list of configuration options
 Reveal.initialize({
   // Display controls in the bottom right corner
   controls: true,
@@ -194,7 +194,7 @@ Reveal.initialize({
   // Opens links in an iframe preview overlay
   previewLinks: false,
   // Theme (e.g., beige, black, league, night, serif, simple, sky, solarized, white)
-  // NOTE setting the theme in the config no longer works in reveal.js 3.x
+  // NOTE setting the theme in the config no longer works in revealjs 3.x
   //theme: Reveal.getQueryHash().theme || 'cc_black',
   // Transition style (e.g., none, fade, slide, convex, concave, zoom)
   transition: Reveal.getQueryHash().transition || 'slide',
@@ -222,13 +222,13 @@ Reveal.initialize({
   minScale: 0.2,
   maxScale: 1.5,
 
-  // Optional libraries used to extend on reveal.js
+  // Optional libraries used to extend on revealjs
   dependencies: [
-      { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
-      { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-      { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-      { src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
-      { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
-      { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+      { src: 'revealjs/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+      { src: 'revealjs/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'revealjs/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'revealjs/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+      { src: 'revealjs/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      { src: 'revealjs/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
   ]
 });</script></body></html>
