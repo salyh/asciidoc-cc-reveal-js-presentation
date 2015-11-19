@@ -2,481 +2,385 @@ include::_settings.adoc[]
 :presenter_name: Hendrik Saly
 :presenter_company: codecentric AG
 :presenter_twitter: hendrikdev22
-:presenter_email: salyh@apache.org
+:presenter_email: hendrik.saly@codecentric.de
 //CC LICENSE
 //:copyright: by
 :copyright: by-sa
 
-= *Johnzon* - Apache's{nbsp}Upcoming JSON Library
+= *Elasticsearch 2 Security* - Beyond Basic Authentication
 {presenter_name}, {presenter_company}
 
-//Johnzon is the Apache implementation for JSR-353 (JSONP) and currently under incubation.
+//Elasticsearch Security: Beyond Basic Authentication (Hendrik Saly) 
 //
-//But wait, Johnzon is more than that. It's also JSON Java Mapper with full data binding and a JAX-RS provider.
+//Neben HTTP Basic Authentication bietet Elasticsearch in Verbindung mit dem 
+//kommerziellen Shield Plugin auch eine Möglichkeit zur Authentifizierung 
+//mittels PKI (X.509 Zertifikate). Darüber hinaus ist es möglich mit Shield 2.0 
+//(welches mit Elasticsearch 2.0 veröffentlicht wurde) eigene Authentication-Realms 
+//zu schreiben. 
 //
-//In this presentation, Hendrik Saly will discuss the current state of the library,
-//the features and the outlook. We'll also look on performance aspects and benchmarks against other JSON libraries.
-//
-//The outlook will focus especially on JSR-367 (JSON Binding) and JSR-374 (Update of JSR-353) because both specs 
-//will be implemented into Johnzon and Hendrik is a member of both expert groups and can give some insights on that.
-//
+//Der Vortrag behandelt diese beiden Themen (u.a. am Beispiel Kerberos) und 
+//geht zudem auf die neuen Möglichkeiten von Document Level Security und Field 
+//Level Security ein, die Shield 2.0 ebenfalls mitbringt. Abschließend werden 
+//die Grenzen aufgezeigt und Alternativen besprochen. 
 
 
 //-------------------------------------------------------------------------------------
-== About the Apache Incubator
-"The Incubator project is the entry path into The Apache Software Foundation (ASF) for projects and codebases 
-wishing to become part of the Foundation's efforts." (http://incubator.apache.org/)
+== Elasticsearch Security
 
-The Apache Incubator has two primary goals:
-
-* Ensure all donations are in accordance with the ASF legal standards
-* Develop new communities that adhere to our guiding principles
+* No security within Elasticsearch by default
+* Secure it by
+** using proxies/tunnels
+** let the application handle security
+** using security plugins
 
 
 //-------------------------------------------------------------------------------------
-== What is Johnzon?
+== Elasticsearch Security - by proxy
 
-* Lightweight JSON library written in Java
-* Core < 90k, 200k for the whole library
-* No external dependencies
-* Implementation of JSR-353
-* Apache 2 License
+* Error prone (complex regex stuff)
+* ES API changes must be manually maintained
+* HTTP REST only
+* No Document or Field level security
 
-image::johnzon_logo.png[width=250,align=right]
+== Elasticsearch Security - by application
 
+* If user access Elasticsearch not directly but through an application
+* Handle security within the application
+* Make sure that only the application can access Elasticsearch (Firewall)
+* No security applied to intra-cluster communication
+
+== Elasticsearch Security - by plugin
+
+* thats what this talk is about
+* Two plugins available
+** Shield 2 (commercial, by elastic)
+** Search Guard (open source, by floragunn)
+* This talk focus on Shield
+
+//-------------------------------------------------------------------------------------
+== Elasticsearch Security - HTTP/REST and Transport
+
+* HTTP/REST
+* Transport protocol (raw tcp)
+** also used for intra-cluster communication
+* With basic authentication SSL/TLS is mandatory
+
+
+//-------------------------------------------------------------------------------------
+== Authentication & Authorization
+
+* Authentication: Who am i
+** Username/Principal (+ secret for a prove)
+* Authorization: What i am allowed to do/see
+** Roles/Groups with privileges/permissions assigned
 
 [NOTE.speaker]
 --
-JEE, Java SE
+Authentication: can also done by host/ip address or unauthenticated/anynonymous
 --
 
 //-------------------------------------------------------------------------------------
-== What is Johnzon? (cont.)
+== What should be secured?
 
-//but not yet certified due to TCK are not accessible by Apache yet +
-
-* Contains also modules which are not defined in JSR-353
-** Object mapper
-** JAX-RS provider
-** Websocket (JSR-356) integration (beta)
-** JSON DSL for mutating documents comfortably (beta)
-
-//-------------------------------------------------------------------------------------
-== Status of the project
-
-* Small but engaged, responsive and friendly community
-* Stable and production ready
-* Performance for Johnzon core is quite well
-* Currently incubating within the Apache Incubator
-** and looking for new community members
-** low entrance barrier
-* Plan is to graduate soon (start this year)
+* Access to nodes
+** restrict on TCP/IP Level (ip filtering)
+** restrict by authentication
+* Intra-cluster communication
+* Limit actions (read, write, admin, ...)
+* Limit access to specific documents (DLS)
+* Limit access to specific fields (FLS)
 
 //-------------------------------------------------------------------------------------
-== Roadmap
+== Shield config
 
-* Implement JSR-367 (API for JSON Binding/JSON-B)
-* Implement JSR-374 (Update of JSR-353)
-* Performance enhancements
-* Increase test coverage
-* JEE certification (once TCK available)
+[source, yaml]
+----
+# All cluster rights
+# All operations on all indices
+admin:
+  cluster: all
+  indices:
+    '*':
+      privileges: all
+      
+# Only GET read action on index named events_index
+get_user:
+  indices:
+    'events_index':
+      privileges: 'indices:data/read/get'
+----
 
+https://www.elastic.co/guide/en/shield/current/reference.html#privileges-list
 
 //-------------------------------------------------------------------------------------
-== Current users of Johnzon
+== Shield Realm
 
-* Apache TomEE 2
-* Apache Tamaya
-* Apache Decanter
+Combines
 
-[data-background="images/cc/codecentric-green-background-16x9.png"]
-== JSR
-
-The spec part
-
-//-------------------------------------------------------------------------------------
-== What is a JSR
-
-* JSR -> Java Specification Request
-* A formal standardization process
-* Community involved
-* Controlled by Oracle within the Java community process (JCP)
-
-//-------------------------------------------------------------------------------------
-== JSR-353 Basics
-
-* Can be used standalone or within a JEE container
-* Provides a streaming API as well as a "Tree Model" API for parsing
-* Generator API for generating valid JSON streams
-
-//-------------------------------------------------------------------------------------
-== Streaming API
-
-* Pull parser, parse JSON files of any size
-* Encoding autodetection
-
-[source, java]
-----
-JsonParser parser = Json.createParser(new FileReader("file.json"));
-while(parser.hasNext() {
-    Event event = parser.next();
-    if(event == Event.VALUE_STRING) {
-    	System.out.println(parser.getString());
-    }
-}
-----
-
-== Encoding autodetection
-
-* RFC 4627 Chapter 3
-* "JSON text SHALL be encoded in Unicode"
-* First two character are always ASCII
-* So we can use this matrix to detect encoding:
-
-[source]
-----
-00 00 00 xx  UTF-32BE
-00 xx 00 xx  UTF-16BE
-xx 00 00 00  UTF-32LE
-xx 00 xx 00  UTF-16LE
-xx xx xx xx  UTF-8
-----
-
-(Johnzon does also handle octet-streams with BOM's correctly)
-
-//-------------------------------------------------------------------------------------
-== "Tree Model" API
-
-* Parse JSON to immutable object tree
-* Caution: All in-memory
-
-[source, java]
-----
-JsonReader reader = Json.createReader(new StringReader("[]"));
-JsonArray array = reader.readArray();
-System.out.println(array.isEmpty());
-System.out.println(array.get(0));
-jsonReader.close();
-----
-//-------------------------------------------------------------------------------------
-== Generator API
-
-* Write JSON "value by value" into a byte/char stream
-
-[source, java]
-----
-Writer writer = ...;
-JsonGenerator generator = Json.createGenerator(writer);
-generator
-     .writeStartObject()
-         .write("firstName", "Mister")
-         .write("lastName", "Spock")
-         .write("age", 99)
-         .writeStartObject("address")
-             .write("streetAddress", "Kolinahr Street 1")
-             .write("city", "Vulcan City")
-             .write("state", "VU")
-             .write("postalCode", "1701")
-         .writeEnd()
-     .writeEnd();
-generator.close();
-----
-
-//-------------------------------------------------------------------------------------
-== Writer API
-
-* Write the "Tree Model" back into a byte/char stream
-
-[source, java]
-----
-Outputstream out = ...;
-JsonObject jo = ...;
-JsonWriter jsonWriter = Json.createWriter(out);
-jsonWriter.writeObject(jo);
-jsonWriter.close();
-----
-
-//-------------------------------------------------------------------------------------
-== Configuration
-
-* Key-Value based
-* Implementation dependent
-* Via factories
-
-[source, java]
-----
-final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {
-            put("org.apache.johnzon.supports-comments", true);
-        }).createReader(...);
-JsonParser generator = Json.createGeneratorFactory();
-JsonGenerator generator = Json.createGeneratorFactory();
-----
-
-[data-background="images/cc/codecentric-green-background-16x9.png"]
-== Johnzon
-
-in particular
-
-
-
-//-------------------------------------------------------------------------------------
-== Johnzon *non* JSR-353 Features
-
-* Comments (single line/multiline)
-* Configurable buffer sizes
-* Different buffer reuse strategies
-** QUEUE - char[] are reused by ConcurrentLinkedQueue (default)
-** BY_INSTANCE - char[] are not reused
-** SINGLETON - char[] are reused by only one global char[]
-** THREAD_LOCAL - char[] are reused by thread (every thread does have its char[] buffer bound to a thread local)
-
-== The "Mapper"
-
-* JSON<-->Java Binding
-* Used by JAX RS provider/Websocket module
-* Supports
-** Custom de-/serializers
-** Proper handling of collections and generics
-** @JohnzonConverter and @JohnzonIgnore annotations
-** Works with fields, getter/setter or both
-** Configurable null/empty handling
-** Configurable byte[] handling
-
-
-== The "Mapper" (cont.)
-
-[source, java]
-----
-final static Mapper mapper = new MapperBuilder().build();
-MyObject myObj = ...;
-mapper.writeObject(myObj, outputStream);
-MyObject myObj2 = mapper.readObject(inputStream, MyObject.class);
-----
-
-(Yet some missing default datatypes for Java SE 8 like java.time.*)
-
-== The "Mapper" (cont.)
-
-* Works mostly hassle free
-* Will be aligned with JSON-B Spec (JSR-367)
-* Need some performance tuning
-
-== JAX-RS Provider
-
-[source, xml]
-----
-<Service id="johnzon" 
-         class-name="org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider">
-    ignores = com.foo.MyType,com.foo.MyOtherType
-    accessMode = method
-    supportHiddenAccess = true
-    doCloseOnStreams = false
-    version = 2
-    skipNull = true
-    skipEmptyArray = true
-</Service>
-----
-
-== Websockets
-
-* Since Johnzon 0.8 there is a Websocket/JSR-356 integration
-* JSON as payload format for WebSocket messages
-* https://rmannibucau.wordpress.com/2015/03/24/json-and-websocket-johnzon-to-the-rescue/
-
-== Websockets (cont.)
-
-Server
-[source, java]
-----
-@ServerEndpoint(value = "/server", encoders = JohnzonTextEncoder.class, 
-                                   decoders = JohnzonTextDecoder.class)
-public class MyServerEndpoint {
-    // same as before
-}
-----
-
-Client
-[source, java]
-----
-public class MessageDecoder extends JohnzonTextDecoder {
-    public MessageDecoder() {
-        super(Message.class);
-    }
-}
-// and used like:
-@ClientEndpoint(encoders = JohnzonTextEncoder.class, decoders = MessageDecoder.class)
-public class ClientEndpointImpl {
-    // ...
-}
-----
-
-== Johnzon DSL
-
-* Upcoming with Johnzon 2
-* Mutable and navigable JSON Structure
-* Fluent API
-
-== Johnzon DSL (cont.)
-
-* Looks like:
-
-[source, java]
-----
-JsonObject jo = ...;
-MutableJsonStructure ms = MutableJsonStructureFactory.toMutableJsonStructure(jo);
-assertNotSame(ms, ms.copy());
-assertFalse(ms.isLeaf("address"));
-assertFalse(ms.isLeafNull("firstName"));
-assertTrue(ms.exists("phoneNumber"));
-assertEquals(1, ms.get("phoneNumber").get(1).getAncestor().getIndex());
-assertNull(ms.getParent());
-assertEquals("Smith", ms.getLeafAsString("lastName"));
-assertEquals("NY", ms.get("address").getLeafAsString("state"));
-assertEquals(5, ms.getKeys().size());
-assertEquals(5, ms.size());
-assertEquals(4, ms.get("address").size());
-ms.add("additionalAddress", ms.get("address").copy().remove("city").set("state", "CA"));
-ms.set(ms.copy().remove("phoneNumber"));
-assertEquals(5, ms.size());
-JsonObject modJo = (JsonObject) ms.toJsonStructure();
-----
-
-//-------------------------------------------------------------------------------------
-== Benchmark
-* JMH based benchmark suite
-* Bytes, Chars (UTF-8/UTF-16)
-* Measurements
-** Parse Only
-** Read to "Tree Model"
-** Generate JSON
-** Serialize
-** Deserialize
+* HTTP Authentication method (Basic/SPNEGO/...)
+* OR PKI Authentication via SSL/TLS
+* Backend Authentication
+* (Backend Authorization)
 
 [NOTE.speaker]
 --
-Not included within Apache Scope because of JMH licensing issue
+Digest is unsupported +
+X-Forwarded-For support unknown. Trusted proxies. +
+Authorization is not really handled in the Realm but in Shield core +
 --
 
 //-------------------------------------------------------------------------------------
-== Benchmark (cont.)
+== Shield Realm
 
-* Small size JSON
-
-image::parseOnly1kChars.jpg[]
+image::realm.png[align=center]
 
 //-------------------------------------------------------------------------------------
-== Benchmark (cont.)
+== PKI authentication
 
-* Medium size JSON (byte stream)
-
-image::read1000kBytes.jpg[]
-
-//-------------------------------------------------------------------------------------
-== Benchmark (cont.)
-
-* Medium size JSON (character stream)
-
-image::read1000kChars.jpg[]
+* Two-way SSL authentication via X.509 certificates
+* Single-Sign On possible
+* Root CA recommended
+* SSL/TLS required
+* Great for Machine-to-Machine communication
+* Works in browser too
 
 //-------------------------------------------------------------------------------------
-== Benchmark (cont.)
+== Generate certificates
 
-* Serialize simple Java Object
+* Assume there is a CA
+* Server certificate for each node
 
-image::serializeSimpleBytes.jpg[]
+[source, shell]
+----
+//Generate server certificate
+keytool -genkey -keystore keystore.jks \
+        -dname "CN=localhost, OU=SSL, O=Test, L=Test, C=DE" \
+        -ext san=dns:localhost,ip:127.0.0.1 \
+//san -> Subject Alternative Names
+//https://www.digicert.com/subject-alternative-name.htm
+
+//Generate CSR
+keytool -certreq ...
+
+//let CA sign an import signed cert back into keystore
+//along with the root CA chain
+keytool -import ...
+----
 
 //-------------------------------------------------------------------------------------
-== Testcoverage
+== Generate certificates
 
-* Approx. 74%  testcoverage yet
-* We want to get above 90%
-* https://coveralls.io/github/salyh/incubator-johnzon
+* Client certificates for each client/user
+
+[source, shell]
+----
+//Create a client key
+openssl genrsa -out client.key 2048
+
+//Create a client certificate
+openssl req -key client.key -new -out client.req \
+            -subj "/C=DE/ST=TESTU/L=TESTU/O=TESTU/OU=TESTU/CN=Mister Spock"
+            
+openssl x509 -req -in client.req \
+             ... \
+             -out client.crt
+
+//optional: create a PCKS12 certificate
+openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12 \
+              -password pass:p12pass      
+----
+
+//-------------------------------------------------------------------------------------
+== wget/curl              
+
+* Access PKI protected URLs
+
+[source, shell]
+----
+
+wget -qO- \
+     --ca-cert=chain-ca.pem  \
+     --certificate=client.crt \
+     --private-key=client.key \
+     https://localhost:9200/_logininfo?pretty
+
+
+curl -E client.crt \
+    --key client.key  \
+    --cacert chain-ca.pem \
+    "https://localhost:9200/_logininfo?pretty"
+
+----                    
+
+//-------------------------------------------------------------------------------------
+== Firefox            
+
+image::ff.png[align=center]
+
 
 [data-background="images/cc/codecentric-green-background-16x9.png"]
-== Upcoming
+== DEMO
 
-The new JSON JSR Specs
-
-
-//-------------------------------------------------------------------------------------
-== JSR-374 (JSON-P 1.1)
-
-* RFC 7159 (update of RFC 4627)
-* Java SE 8
-* Json Pointer (RFC 6901)
-* Json Patch (RFC 6902)
-* Json Merge Patch (RFC 7396)
-* Mutable "Tree Model"
-* Currently EDR (Early draft review)
+* Setup PKI realm
+* https://github.com/salyh/elasticsearch-beyond-basicauthentication
 
 //-------------------------------------------------------------------------------------
-== JSR-367 (JSON-B 1.0)
+== Kerberos/SPNEGO authentication
 
-* Java standard for JSON<->Java Binding
-* Java SE 8
-* Integrates with JSR-353/374
-* Currently EDR (Early draft review)
+* Fits into Kerberos/AD infrastructure
+* Enterprise grade security
+* Single-Sign On possible
+* No SSL/TLS required
+* Works great with browsers
 
-== JSR-367 (JSON-B 1.0) (cont.)
+//-------------------------------------------------------------------------------------
+== Kerberos Realm
+
+* Supports HTTP/REST
+* Supports Transport protocol
+* No JAAS login.conf needed (but its used under the hood)
+* as well as GSS-API (Generic Security Service Application Program Interface)
+
+//-------------------------------------------------------------------------------------
+== Kerberos Realm
+
+* Access Kerberos protected URLs
+
+
+[source, shell]
+----
+
+kinit user@REALM.COM
+
+curl -k --negotiate  -u : \
+    "https://localhost:9200/_logininfo?pretty"
+
+----                    
+
+//-------------------------------------------------------------------------------------
+== Kerberos Realm
+
+* Access Kerberos protected transport protocol
+
 
 [source, java]
 ----
-Jsonb jsonb = JsonbBuilder.create();
-Book book = jsonb.fromJson(new File("jsonfile.json"), Book.class);
-----
+
+//KerberizedClient "client wrapper"
+
+Client client = ...;
+
+KerberizedClient kc = new KerberizedClient(client, 
+						"user@REALM.COM", 
+						"secret", 
+						"HTTP/localhost@REALM.COM");
+
+KerberizedClient kc = new KerberizedClient(client, 
+						"user@REALM.COM", 
+						 Paths.get("ticket.cc"),
+						"HTTP/localhost@REALM.COM");  
+
+----                    
+
 
 
 [data-background="images/cc/codecentric-green-background-16x9.png"]
-== Getting started
+== DEMO
 
-and involved
+* Setup Kerberos realm
+* https://github.com/salyh/elasticsearch-beyond-basicauthentication
 
 //-------------------------------------------------------------------------------------
-== Get it
+== Mapping Users to Roles
 
-from maven central
-[source, xml]
+* CONF_DIR/shield/users/role_mapping.yml
+
+[source, yaml]
 ----
-<dependency>
-  <groupId>org.apache.johnzon</groupId>
-  <artifactId>johnzon-core</artifactId>
-  <version>0.9.1-incubating</version>
-</dependency>
-
-<dependency>
-  <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-json_1.0_spec</artifactId>
-  <version>1.0-alpha-1</version>
-  <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
-</dependency>
+monitoring: 
+  - "cn=admins,dc=example,dc=com" 
+user:
+  - "cn=John Doe,cn=contractors,dc=example,dc=com" 
+  - "cn=users,dc=example,dc=com"
+  - "cn=admins,dc=example,dc=com"
 ----
 
-or download from http://www.eu.apache.org/dist/incubator/johnzon/
 
 //-------------------------------------------------------------------------------------
-== Where to go from here
+== Document Level Security in Shield 2
 
-* http://incubator.apache.org/projects/johnzon.html
-* mailto:dev-subscribe@johnzon.incubator.apache.org[Subscribe to the dev mailing list]
-* https://github.com/salyh/jsr353-benchmark
-* https://github.com/apache/incubator-johnzon/tree/jsr374_367
-* https://www.jcp.org/en/jsr/detail?id=353
-* https://www.jcp.org/en/jsr/detail?id=374
-* https://www.jcp.org/en/jsr/detail?id=367
+* Limit access to particular documents matching a query
+
+[source, yaml]
+----
+customer_care: //<1>
+  indices:
+    '*': //<2>
+      privileges: read //<3>
+      query: '{"term" : {"department_id" : "12"}}'' //<4>
+            
+----
+<1> role
+<2> index
+<3> privilege
+<4> query
 
 //-------------------------------------------------------------------------------------
-== Consider to join the project if you are
+== Field Level Security in Shield 2
 
-* a (Java) developer looking to get involved within ASF
-* interested in implementing standards
-* doing JSON the whole day
-* looking for a great community to engage with
+* Limit access to fields within a document
+
+[source, yaml]
+----
+my_role:
+  indices:
+    '*':
+      privileges: read
+      fields:
+        - customer.*
+----
 
 //-------------------------------------------------------------------------------------
-== Github
+== Limitations
 
-* https://github.com/apache/incubator-johnzon
-* We accept Pull Requests
+* Shield is commercial and closed source
+* No real separation between authentication and authorization
+* Limited multirealm support
+* XFF support unknown (for IP filtering)
+* Shield config must be synchronized between nodes
+* No nested LDAP roles
+
+[NOTE.speaker]
+--
+Not possible to authenticate via Kerberos and then grab roles from LDAP
+--
+
+//-------------------------------------------------------------------------------------
+== Alternatives
+
+* Floragunn Search Guard Plugin
+* Open Source (ASL2 License)
+* Currently only ES 1.x supported and low activity
+* Central configuration approach
+* More flexible, more features
+
+//-------------------------------------------------------------------------------------
+== Whats probably next?
+
+* SAML (Security Assertion Markup Language)
+* OAuth 2
+* Waffle (native Windows authentication)
+
+//-------------------------------------------------------------------------------------
+== Links
+
+* https://github.com/salyh/elasticsearch-beyond-basicauthentication
+* https://github.com/codecentric/elasticsearch-shield-kerberos-realm
+* https://www.elastic.co/guide/en/shield/current/pki.html
+* https://www.elastic.co/guide/en/shield/current/custom-realms.html
+* https://www.elastic.co/guide/en/shield/current/reference.html#ref-actions-list
+* https://github.com/floragunncom/search-guard
+* https://github.com/dblock/waffle
 
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
